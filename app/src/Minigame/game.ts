@@ -1,24 +1,18 @@
-import { Scene } from "@babylonjs/core/scene";
-import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { Engine } from "@babylonjs/core/Engines/engine";
+import { StateMachine } from "./stateMachine";
+import { Level0State } from "./level0State";
+import { Level1State } from "./level1State";
 
 export class Game {
-    private readonly _scene: Scene;
+    private readonly _stateMachine = new StateMachine();
 
     constructor(engine: Engine, canvas: HTMLCanvasElement) {
-        this._scene = new Scene(engine);
-        // Our built-in 'sphere' shape.
-        var sphere = MeshBuilder.CreateSphere("sphere", { diameter: 2, segments: 32 }, this._scene);
-
-        // Move the sphere upward 1/2 its height
-        sphere.position.y = 1;
-
-        // Our built-in 'ground' shape.
-        MeshBuilder.CreateGround("ground", { width: 6, height: 6 }, this._scene);
-        this._scene.createDefaultCameraOrLight(true, true, true);
+        this._stateMachine.pushState(new Level0State(engine, this._stateMachine), 0);
+        this._stateMachine.pushState(new Level1State(engine, this._stateMachine), 1);
+        this._stateMachine.selectStateAsync(0);
     }
 
     public Update(deltaT: number): void {
-        this._scene.render();
+        this._stateMachine.update();
     }
 }
