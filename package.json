@@ -1,0 +1,15 @@
+{
+  "name": "nekohimeminigame",
+  "version": "0.1.0",
+  "description": "",
+  "private": "true",
+  "scripts": {
+    "install": "cd app && npm install && cd ../deploy && npm install",
+    "dev": "npx concurrently \"npm --prefix ./app run dev\" \"npm --prefix ./deploy run dev\"",
+    "build": "npm --prefix ./app run build && npm --prefix ./deploy run build"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "concurrently": "^7.0.0"
+  }
+}
