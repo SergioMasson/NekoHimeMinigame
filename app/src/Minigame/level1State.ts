@@ -4,12 +4,11 @@ import { IState } from "./stateMachine";
 import { Nullable } from "@babylonjs/core/types";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import HavokPhysics from "@babylonjs/havok";
-import { PhysicsEngine, HavokPlugin, PhysicsCharacterController, CharacterSupportedState, CharacterSurfaceInfo, PhysicsAggregate, PhysicsShapeType } from "@babylonjs/core/Physics";
+import { HavokPlugin, PhysicsCharacterController, CharacterSupportedState, CharacterSurfaceInfo, PhysicsAggregate, PhysicsShapeType } from "@babylonjs/core/Physics";
 import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { KeyboardEventTypes } from "@babylonjs/core/Events/keyboardEvents";
 import { Camera, FreeCamera } from "@babylonjs/core";
-import { Game } from "./game";
 
 enum PlayerState {
     IN_AIR,
@@ -71,7 +70,7 @@ export class Level1State implements IState {
         const floor = MeshBuilder.CreateBox("plane", {width: 100, height: 2, depth: 2});
         floor.freezeWorldMatrix();
         floor.doNotSyncBoundingInfo = true;
-        var plane = new PhysicsAggregate(floor, PhysicsShapeType.BOX);
+        new PhysicsAggregate(floor, PhysicsShapeType.BOX);
 
         this._scene.onBeforeRenderObservable.add((scene) => {
             if (!this._characterController || !this._player) {
