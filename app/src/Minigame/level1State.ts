@@ -1,6 +1,6 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Engine } from "@babylonjs/core/Engines/engine";
-import { IState, StateMachine } from "./stateMachine";
+import { IState } from "./stateMachine";
 import { Nullable } from "@babylonjs/core/types";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import HavokPhysics from "@babylonjs/havok";
@@ -9,6 +9,7 @@ import { Vector3, Quaternion } from "@babylonjs/core/Maths/math.vector";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { KeyboardEventTypes } from "@babylonjs/core/Events/keyboardEvents";
 import { Camera, FreeCamera } from "@babylonjs/core";
+import { Game } from "./game";
 
 enum PlayerState {
     IN_AIR,
@@ -33,22 +34,28 @@ export class Level1State implements IState {
     private readonly forwardLocalSpace = new Vector3(0, 0, 1);
     private _isReady = false;
     private readonly _ortographicScale = 20;
+    private _isDone: boolean;
 
-    constructor(engine: Engine, stateMachine: StateMachine) {
+    constructor(engine: Engine) {
         this._engine = engine;
         this._havokPlugin = null;
         this._playerPosition = new Vector3();
         this._playerWantsToJump = false;
+        this._isDone = false;
+    }
+
+    public OnStart(): void {
+        this._isDone = false;
+        this.OnStartAsync();
     }
 
     async OnStartAsync(): Promise<void> {
+        console.log("Level1State started");
         this._scene = new Scene(this._engine);
         this._isReady = false;
 
-        if (!this._havokPlugin) {
-            const havokInterface = await HavokPhysics();
-            this._havokPlugin = new HavokPlugin(undefined /* or the value that fits your usecase */, havokInterface);
-        }
+        const havokInterface = await HavokPhysics();
+        this._havokPlugin = new HavokPlugin(undefined /* or the value that fits your usecase */, havokInterface);
 
         this._scene.enablePhysics(new Vector3(0, -9.81, 0), this._havokPlugin);
 
@@ -56,7 +63,7 @@ export class Level1State implements IState {
         const r = 0.6;
         this._player = MeshBuilder.CreateCapsule("CharacterDisplay", { height: h, radius: r }, this._scene);
        
-        this._playerPosition = new Vector3(0, 2, 0);
+        this._playerPosition = new Vector3(0, 30, 0);
         this._player.position.copyFrom(this._playerPosition);
 
         this._characterController = new PhysicsCharacterController(this._playerPosition, { capsuleHeight: h, capsuleRadius: r }, this._scene);
@@ -84,6 +91,11 @@ export class Level1State implements IState {
 
             let down = new Vector3(0, -1, 0);
             let support = this._characterController.checkSupport(dt, down);
+
+            if (support.supportedState === CharacterSupportedState.SUPPORTED) {
+                this._isDone = true;
+                return;
+            }
 
             let desiredLinearVelocity = this._getDesiredVelocity(dt, support, Quaternion.Zero(), this._characterController.getVelocity());
             this._characterController.setVelocity(desiredLinearVelocity);
@@ -113,9 +125,9 @@ export class Level1State implements IState {
         var camera = new FreeCamera("mainCamera", new Vector3(0, 5, -10), this._scene);
         camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
         camera.orthoLeft = - ratio * this._ortographicScale;
-        camera.orthoBottom = -this._ortographicScale;
+        camera.orthoBottom = 0;
         camera.orthoRight = ratio * this._ortographicScale;
-        camera.orthoTop = this._ortographicScale;
+        camera.orthoTop = this._ortographicScale * 2;
 
         this._isReady = true;
     }
@@ -193,17 +205,32 @@ export class Level1State implements IState {
         return PlayerState.IN_AIR;
     }
 
-    async OnFinishAsync(): Promise<void> {
+    OnFinish(): void {
+        this._isReady = false;
         console.log("Level1State ended");
+
+        if (this._characterController) {
+            this._characterController = null;
+        }
 
         if (this._scene) {
             this._scene.dispose();
+            this._scene = null;
+        }
+
+        if (this._havokPlugin) {
+            this._havokPlugin.dispose();
+            this._havokPlugin = null;
         }
     }
 
-    Update(): void {
-        if (this._scene && this._isReady) {
-            this._scene.render();
+    Update(): boolean {
+        if ( this._isReady) {
+            if (this._scene) {
+                this._scene.render();
+            }
         }
+
+        return this._isDone;
     }
 }

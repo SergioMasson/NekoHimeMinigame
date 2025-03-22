@@ -1,5 +1,5 @@
 import { Color4, Scene } from "@babylonjs/core";
-import { IState, StateMachine } from "./stateMachine";
+import { IState } from "./stateMachine";
 import { Engine } from "@babylonjs/core/Engines/engine";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D"
 import { Nullable } from "@babylonjs/core/types";
@@ -9,11 +9,16 @@ export class Level0State implements IState {
 
     private _scene: Nullable<Scene>;
     private readonly _engine: Engine;
-    private readonly _stateMachine: StateMachine;
+    private _isDone: boolean;
 
-    constructor(engine: Engine, stateMachine: StateMachine) {
+    constructor(engine: Engine) {
         this._engine = engine;
-        this._stateMachine = stateMachine;
+        this._isDone = false;
+    }
+
+    public OnStart(): void {
+        this._isDone = false;
+        this.OnStartAsync();
     }
 
     async OnStartAsync(): Promise<void> {
@@ -26,20 +31,23 @@ export class Level0State implements IState {
         const playButton = loadedGUI.getControlByName("StartButton") as Button;
 
         playButton.onPointerClickObservable.add(() => {
-            this._stateMachine.selectStateAsync(1);
+            this._isDone = true;
         });
     }
 
-    async OnFinishAsync(): Promise<void> {
+    OnFinish(): void {
         if (this._scene) {
             this._scene.dispose();
+            this._scene = null;
         }
     }
     
-    Update(): void {
+    Update(): boolean {
         if (this._scene) {
             this._scene.render();
         }
+
+        return this._isDone;
     }
 
 }

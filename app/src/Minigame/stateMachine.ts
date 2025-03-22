@@ -1,51 +1,59 @@
 import { Nullable } from "@babylonjs/core/types";
 
 export interface IState {
-    OnFinishAsync(): Promise<void>;
-    OnStartAsync(): Promise<void>;
-    Update(): void;
+    OnFinish(): void;
+    OnStart(): void;
+    Update(): boolean;
 }
 
 export class StateMachine {
     readonly _states: Map<number, IState> = new Map<number, IState>();
     private _currentState: Nullable<IState> = null;
     private _previewsState: Nullable<IState> = null;
+    private _stateID: number;
     constructor() {}
 
     public pushState(state: IState, id: number) {
         this._states.set(id, state);
     }
 
-    public async selectStateAsync(id: number): Promise<void> {
+    public selectState(id: number): void {
         if (this._currentState) {
-            await this._currentState.OnFinishAsync();
+            this._currentState.OnFinish();
             this._previewsState = this._currentState;
             this._currentState = null;
         }
 
         const nextState = this._states.get(id);
+        this._stateID = id;
 
         if (nextState) {
             this._currentState = nextState;
-            await this._currentState.OnStartAsync();
+            this._currentState.OnStart();
         }
     }
 
-    public update() {
-        if (this._currentState) {
-            this._currentState.Update();
-        }
+    public getCurrentStateID() : number{
+        return this._stateID;
     }
 
-    public async returnToPreviewsStateAsync() : Promise<void> {
+    public update(): boolean {
         if (this._currentState) {
-            await this._currentState.OnFinishAsync();
+            return this._currentState.Update();
+        }
+
+        return false;
+    }
+
+    public returnToPreviewsStateAsync() : void {
+        if (this._currentState) {
+            this._currentState.OnFinish();
             this._currentState = null;
         }
 
         if (this._previewsState) {
             this._currentState = this._previewsState;
-            await this._currentState.OnStartAsync();
+            this._currentState.OnStart();
         }
     }
 }
