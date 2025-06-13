@@ -1,4 +1,4 @@
-name: Build and Deploy to Deploy Branch
+name: build-and-deploy
 
 on:
   push:
